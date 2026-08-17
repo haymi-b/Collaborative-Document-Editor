@@ -17,7 +17,7 @@ const Login = () => {
             await login(email, password);
             navigate('/');
         } catch (err) {
-            setError(err.response?.data?.message || 'Failed to login');
+            setError(err.response?.data?.message || 'login failed :(');
         } finally {
             setLoading(false);
         }
@@ -26,8 +26,6 @@ const Login = () => {
     return (
         <div className="auth-bg" style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
             <div style={{ position: 'relative', zIndex: 10, width: '100%', maxWidth: '420px', padding: '0 20px' }}>
-
-                {/* Logo */}
                 <div style={{ textAlign: 'center', marginBottom: '32px' }}>
                     <div style={{
                         display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
@@ -47,7 +45,6 @@ const Login = () => {
                     </p>
                 </div>
 
-                {/* Card */}
                 <div className="auth-card" style={{ padding: '36px' }}>
                     <h2 style={{ color: 'white', fontSize: '1.4rem', fontWeight: '700', marginBottom: '8px', textAlign: 'center' }}>
                         Welcome back 👋

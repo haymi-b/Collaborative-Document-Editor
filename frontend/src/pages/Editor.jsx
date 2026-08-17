@@ -38,17 +38,15 @@ const Editor = () => {
     const [isOwner, setIsOwner] = useState(false);
     const [saveStatus, setSaveStatus] = useState('saved'); // 'saving' | 'saved'
 
-    // Share Modal State
-    const [showShareModal, setShowShareModal] = useState(false);
-    const [shareEmail, setShareEmail] = useState('');
-    const [shareRole, setShareRole] = useState('Viewer');
-    const [shareMsg, setShareMsg] = useState('');
+    const [showShare, setShowShare] = useState(false);
+    const [shareTarget, setShareTarget] = useState('');
+    const [role, setRole] = useState('Viewer');
+    const [msg, setMsg] = useState('');
 
     const updateActiveUsersState = useCallback(() => {
         setActiveUsers(Array.from(activeUsersRef.current.values()));
     }, []);
 
-    // Initialize Quill editor using a ref callback
     const initQuill = useCallback((node) => {
         if (node && !quillRef.current) {
             editorDivRef.current = node;
@@ -60,7 +58,6 @@ const Editor = () => {
         }
     }, []);
 
-    // Socket setup
     useEffect(() => {
         const socketUrl = import.meta.env.VITE_SOCKET_URL || 'http://localhost:5000';
         const s = io(socketUrl);
@@ -85,7 +82,6 @@ const Editor = () => {
         };
     }, [updateActiveUsersState]);
 
-    // Fetch document & join room
     useEffect(() => {
         if (!socketRef.current || !documentId || !user) return;
         socketRef.current.emit('join-document', { documentId, user });
@@ -105,7 +101,6 @@ const Editor = () => {
             });
     }, [documentId, user, navigate]);
 
-    // Load initial contents once Quill and document are ready
     useEffect(() => {
         const q = quillRef.current;
         if (q && document && !loadedRef.current) {
@@ -116,7 +111,6 @@ const Editor = () => {
         }
     }, [document]);
 
-    // Poll until quill is initialized then load (handles timing between ref init and document fetch)
     useEffect(() => {
         if (!document || loadedRef.current) return;
         const interval = setInterval(() => {
@@ -132,7 +126,6 @@ const Editor = () => {
         return () => clearInterval(interval);
     }, [document]);
 
-    // Receive changes from other collaborators
     useEffect(() => {
         const s = socketRef.current;
         if (!s) return;
@@ -143,7 +136,6 @@ const Editor = () => {
         return () => s.off('receive-changes', handler);
     }, []);
 
-    // Send changes to collaborators
     useEffect(() => {
         const q = quillRef.current;
         if (!q) return;
@@ -161,7 +153,6 @@ const Editor = () => {
         };
     }, []);
 
-    // Auto save
     useEffect(() => {
         const interval = setInterval(() => {
             const q = quillRef.current;
@@ -183,20 +174,19 @@ const Editor = () => {
 
     const handleShare = async (e) => {
         e.preventDefault();
-        setShareMsg('');
+        setMsg('');
         try {
-            await api.post(`/docs/${documentId}/share`, { email: shareEmail, permission: shareRole });
-            setShareMsg('✓ Shared successfully!');
-            setShareEmail('');
-            setTimeout(() => setShowShareModal(false), 1500);
+            await api.post(`/docs/${documentId}/share`, { email: shareTarget, permission: role });
+            setMsg('✓ Shared successfully!'); // success!
+            setShareTarget('');
+            setTimeout(() => setShowShare(false), 1500);
         } catch (err) {
-            setShareMsg(err.response?.data?.message || 'Failed to share');
+            setMsg(err.response?.data?.message || 'failed to share :(');
         }
     };
 
     return (
         <div style={{ display: 'flex', flexDirection: 'column', height: '100vh', backgroundColor: '#f8fafc', position: 'relative' }}>
-            {/* Header */}
             <header style={{
                 backgroundColor: 'white',
                 borderBottom: '1px solid #e2e8f0',
@@ -241,7 +231,6 @@ const Editor = () => {
                 </div>
 
                 <div style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
-                    {/* Active users */}
                     <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#64748b', fontSize: '0.875rem' }}>
                         <Users size={16} />
                         {activeUsers.length > 0 ? (
@@ -263,7 +252,6 @@ const Editor = () => {
                         )}
                     </div>
 
-                    {/* Save status */}
                     <div style={{
                         display: 'flex', alignItems: 'center', gap: '6px',
                         fontSize: '0.75rem', fontWeight: '500',
@@ -279,7 +267,7 @@ const Editor = () => {
 
                     {isOwner && (
                         <button
-                            onClick={() => setShowShareModal(true)}
+                            onClick={() => setShowShare(true)}
                             style={{
                                 display: 'flex', alignItems: 'center', gap: '6px',
                                 fontSize: '0.875rem', background: '#0284c7', color: 'white',
@@ -295,7 +283,6 @@ const Editor = () => {
                 </div>
             </header>
 
-            {/* Editor area */}
             <main style={{ flex: 1, overflow: 'auto', backgroundColor: '#f1f5f9', padding: '32px 16px' }}>
                 <div style={{ maxWidth: '860px', margin: '0 auto' }}>
                     <div style={{
@@ -308,8 +295,7 @@ const Editor = () => {
                 </div>
             </main>
 
-            {/* Share Modal */}
-            {showShareModal && (
+            {showShare && (
                 <div style={{
                     position: 'fixed', inset: 0, zIndex: 50,
                     display: 'flex', alignItems: 'center', justifyContent: 'center',
@@ -325,21 +311,21 @@ const Editor = () => {
                                 Share Document
                             </h3>
                             <button
-                                onClick={() => { setShowShareModal(false); setShareMsg(''); }}
+                                onClick={() => { setShowShare(false); setMsg(''); }}
                                 style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#94a3b8', padding: '4px' }}
                             >
                                 <X size={20} />
                             </button>
                         </div>
 
-                        {shareMsg && (
+                        {msg && (
                             <div style={{
                                 padding: '10px 14px', borderRadius: '8px', marginBottom: '16px', fontSize: '0.875rem',
-                                background: shareMsg.startsWith('✓') ? '#f0fdf4' : '#fef2f2',
-                                color: shareMsg.startsWith('✓') ? '#16a34a' : '#dc2626',
-                                border: `1px solid ${shareMsg.startsWith('✓') ? '#bbf7d0' : '#fecaca'}`,
+                                background: msg.startsWith('✓') ? '#f0fdf4' : '#fef2f2',
+                                color: msg.startsWith('✓') ? '#16a34a' : '#dc2626',
+                                border: `1px solid ${msg.startsWith('✓') ? '#bbf7d0' : '#fecaca'}`,
                             }}>
-                                {shareMsg}
+                                {msg}
                             </div>
                         )}
 
@@ -350,8 +336,8 @@ const Editor = () => {
                                 </label>
                                 <input
                                     type="email"
-                                    value={shareEmail}
-                                    onChange={(e) => setShareEmail(e.target.value)}
+                                    value={shareTarget}
+                                    onChange={(e) => setShareTarget(e.target.value)}
                                     placeholder="name@example.com"
                                     required
                                     style={{
@@ -369,8 +355,8 @@ const Editor = () => {
                                     Permission
                                 </label>
                                 <select
-                                    value={shareRole}
-                                    onChange={(e) => setShareRole(e.target.value)}
+                                    value={role}
+                                    onChange={(e) => setRole(e.target.value)}
                                     style={{
                                         width: '100%', padding: '10px 14px', borderRadius: '8px',
                                         border: '1px solid #cbd5e1', outline: 'none', fontSize: '0.95rem',

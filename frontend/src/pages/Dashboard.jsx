@@ -31,11 +31,12 @@ const Dashboard = () => {
         }
     };
 
-    const handleCreateNew = async () => {
+    const makeNewDoc = async () => {
         if (creating) return;
         setCreating(true);
         setError('');
         try {
+            // new doc
             const res = await api.post('/docs', { title: 'Untitled Document' });
             navigate(`/document/${res.data._id}`);
         } catch (err) {
@@ -45,15 +46,15 @@ const Dashboard = () => {
         }
     };
 
-    const handleDelete = async (e, id) => {
+    const removeDoc = async (e, id) => {
         e.preventDefault();
         e.stopPropagation();
         if (!window.confirm('Delete this document?')) return;
         try {
             await api.delete(`/docs/${id}`);
-            fetchDocuments();
+            fetchDocuments(); // refresh
         } catch (err) {
-            setError(err.response?.data?.message || 'Failed to delete document.');
+            setError(err.response?.data?.message || 'Failed to delete doc.');
         }
     };
 
@@ -102,7 +103,7 @@ const Dashboard = () => {
                         <Copy size={15} />
                     </button>
                     <button
-                        onClick={(e) => handleDelete(e, doc._id)}
+                        onClick={(e) => removeDoc(e, doc._id)}
                         className="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-md transition-colors"
                         title="Delete"
                     >
@@ -115,7 +116,6 @@ const Dashboard = () => {
 
     return (
         <div className="min-h-screen bg-slate-50">
-            {/* Navbar */}
             <nav className="bg-white border-b border-slate-200 sticky top-0 z-10 shadow-sm">
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                     <div className="flex justify-between h-16 items-center">
@@ -140,11 +140,10 @@ const Dashboard = () => {
             </nav>
 
             <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-                {/* Header row */}
                 <div className="flex justify-between items-center mb-6">
                     <h1 className="text-2xl font-bold text-slate-800">Your Documents</h1>
                     <button
-                        onClick={handleCreateNew}
+                        onClick={makeNewDoc}
                         disabled={creating}
                         className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 disabled:opacity-60 disabled:cursor-not-allowed text-white px-5 py-2.5 rounded-lg shadow-sm font-medium transition-colors"
                     >
@@ -155,7 +154,6 @@ const Dashboard = () => {
                     </button>
                 </div>
 
-                {/* Error banner */}
                 {error && (
                     <div className="flex items-center gap-3 bg-red-50 border border-red-200 text-red-700 rounded-xl px-4 py-3 mb-6 text-sm">
                         <AlertCircle size={18} className="flex-shrink-0" />
@@ -164,19 +162,17 @@ const Dashboard = () => {
                     </div>
                 )}
 
-                {/* Loading state */}
                 {loading ? (
                     <div className="flex justify-center items-center py-24">
                         <Loader2 size={36} className="animate-spin text-blue-400" />
                     </div>
                 ) : documents.ownedDocs.length === 0 && documents.sharedDocs.length === 0 ? (
-                    /* Empty state */
                     <div className="text-center py-20 bg-white rounded-2xl border border-dashed border-slate-200">
                         <FileText className="mx-auto text-slate-300 mb-4" size={60} />
                         <h3 className="text-lg font-medium text-slate-700">No documents yet</h3>
                         <p className="text-slate-400 mt-2 mb-6 text-sm">Create your first collaborative document to get started.</p>
                         <button
-                            onClick={handleCreateNew}
+                            onClick={makeNewDoc}
                             disabled={creating}
                             className="inline-flex items-center gap-2 bg-blue-50 hover:bg-blue-100 disabled:opacity-60 text-blue-700 px-5 py-2.5 rounded-lg font-medium transition-colors"
                         >
@@ -186,7 +182,6 @@ const Dashboard = () => {
                     </div>
                 ) : (
                     <div className="space-y-10">
-                        {/* Owned docs */}
                         {documents.ownedDocs.length > 0 && (
                             <div>
                                 <h2 className="text-sm font-semibold text-slate-500 uppercase tracking-wider mb-4 flex items-center gap-2">
@@ -198,7 +193,6 @@ const Dashboard = () => {
                             </div>
                         )}
 
-                        {/* Shared docs */}
                         {documents.sharedDocs.length > 0 && (
                             <div>
                                 <h2 className="text-sm font-semibold text-slate-500 uppercase tracking-wider mb-4 flex items-center gap-2">

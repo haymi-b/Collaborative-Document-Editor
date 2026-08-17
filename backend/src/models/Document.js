@@ -2,7 +2,7 @@ const mongoose = require('mongoose');
 
 const documentSchema = new mongoose.Schema({
     title: { type: String, default: 'Untitled Document' },
-    data: { type: Object, default: {} }, // Will store Quill document delta
+    data: { type: Object, default: {} }, // quill delta 
     owner: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
     sharedWith: [
         {

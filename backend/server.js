@@ -11,39 +11,37 @@ const Document = require('./src/models/Document');
 
 const app = express();
 const server = http.createServer(app);
-const ALLOWED_ORIGINS = [
+// todo: maybe move to env?
+const allowedOrigins = [
   'http://localhost:5173',
-  'http://172.16.5.46:5173',
+  'http://172.16.5.46:5173', // my pc 
 ];
 
 const io = new Server(server, {
   cors: {
-    origin: ALLOWED_ORIGINS,
+    origin: allowedOrigins,
     methods: ['GET', 'POST', 'PUT', 'DELETE']
   }
 });
 
-// Connect to MongoDB
 connectDB();
 
-app.use(cors({ origin: ALLOWED_ORIGINS }));
+app.use(cors({ origin: allowedOrigins }));
 app.use(express.json());
 
-// Main Root route
 app.get('/', (req, res) => res.send('Collaborative Editor API is running.'));
 
-// Routes
+// setup routes
 app.use('/api/auth', authRoutes);
 app.use('/api/docs', docRoutes);
 
-// Socket.io for Real-Time Collaboration
+// websocket stuff
 io.on('connection', (socket) => {
-  console.log('User connected:', socket.id);
+  // console.log('user connected ->', socket.id);
 
   socket.on('join-document', async ({ documentId, user }) => {
     socket.join(documentId);
 
-    // Authorization Check
     let hasEditPermission = false;
     try {
       if (user) {
@@ -59,18 +57,14 @@ io.on('connection', (socket) => {
           }
         }
       }
-    } catch (e) {
-      console.log(e);
+    } catch (err) {
+      console.log(err);
     }
 
-    // Announce presence
-    if (user) {
-      socket.to(documentId).emit('user-joined', user);
-    }
+    if (user) socket.to(documentId).emit('user-joined', user);
 
     socket.on('send-changes', (delta) => {
       if (!hasEditPermission) return;
-      // Broadcast Quill Delta to everyone else in the document room
       socket.broadcast.to(documentId).emit('receive-changes', delta);
     });
 
@@ -90,6 +84,7 @@ io.on('connection', (socket) => {
     });
 
     socket.on('disconnect', () => {
+      // alert others
       if (user) {
         socket.to(documentId).emit('user-left', user);
       }
@@ -99,5 +94,5 @@ io.on('connection', (socket) => {
 
 const PORT = process.env.PORT || 5000;
 server.listen(PORT, '0.0.0.0', () => {
-  console.log(`Server running on port ${PORT} — accessible at http://172.16.5.46:${PORT}`);
+  console.log(`server up on ${PORT}`); // http://172.16.5.46:${PORT}
 });

@@ -18,7 +18,7 @@ const Register = () => {
             await register(name, email, password);
             navigate('/');
         } catch (err) {
-            setError(err.response?.data?.message || 'Failed to register');
+            setError(err.response?.data?.message || 'register failed :(');
         } finally {
             setLoading(false);
         }
@@ -27,8 +27,6 @@ const Register = () => {
     return (
         <div className="auth-bg" style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
             <div style={{ position: 'relative', zIndex: 10, width: '100%', maxWidth: '420px', padding: '0 20px' }}>
-
-                {/* Logo */}
                 <div style={{ textAlign: 'center', marginBottom: '28px' }}>
                     <div style={{
                         display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
@@ -48,7 +46,6 @@ const Register = () => {
                     </p>
                 </div>
 
-                {/* Card */}
                 <div className="auth-card" style={{ padding: '36px' }}>
                     <h2 style={{ color: 'white', fontSize: '1.4rem', fontWeight: '700', marginBottom: '8px', textAlign: 'center' }}>
                         Create your account
@@ -106,7 +103,6 @@ const Register = () => {
                         </button>
                     </form>
 
-                    {/* Feature badges */}
                     <div style={{ display: 'flex', justifyContent: 'center', gap: '12px', marginTop: '20px', flexWrap: 'wrap' }}>
                         {['✓ Free forever', '✓ Real-time sync', '✓ Secure'].map(f => (
                             <span key={f} style={{ color: 'rgba(255,255,255,0.35)', fontSize: '0.75rem' }}>{f}</span>

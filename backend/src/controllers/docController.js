@@ -1,64 +1,58 @@
 const Document = require('../models/Document');
 
-// @route   POST /api/docs
-// @desc    Create a new document
 exports.createDocument = async (req, res) => {
     try {
-        const document = await Document.create({
-            title: req.body.title || 'Untitled Document',
+        let docTitle = req.body.title || 'Untitled Document';
+        const doc = await Document.create({
+            title: docTitle,
             owner: req.user._id,
-            data: '' // Initial empty doc
+            data: '' // init empty doc 
         });
-        res.status(201).json(document);
-    } catch (error) {
-        res.status(500).json({ message: error.message });
+        // console.log("doc created", doc)
+        res.status(201).json(doc);
+    } catch (err) {
+        res.status(500).json({ message: err.message });
     }
 };
 
-// @route   GET /api/docs
-// @desc    Get all documents for a user (owned and shared)
 exports.getDocuments = async (req, res) => {
     try {
-        const ownedDocs = await Document.find({ owner: req.user._id }).sort('-updatedAt');
-        const sharedDocs = await Document.find({ 'sharedWith.user': req.user._id }).sort('-updatedAt');
-        res.json({ ownedDocs, sharedDocs });
-    } catch (error) {
-        res.status(500).json({ message: error.message });
+        // get all my docs
+        const owned = await Document.find({ owner: req.user._id }).sort('-updatedAt');
+
+        const shared = await Document.find({ 'sharedWith.user': req.user._id }).sort('-updatedAt');
+        res.json({ ownedDocs: owned, sharedDocs: shared });
+    } catch (e) {
+        res.status(500).json({ message: e.message });
     }
 };
 
-// @route   GET /api/docs/:id
-// @desc    Get single document
 exports.getDocumentById = async (req, res) => {
     try {
-        const document = await Document.findById(req.params.id)
+        const doc = await Document.findById(req.params.id)
             .populate('owner', 'name email')
             .populate('sharedWith.user', 'name email');
 
-        if (!document) return res.status(404).json({ message: 'Document not found' });
+        if (!doc) return res.status(404).json({ message: 'cant find document' });
 
-        // Check access
-        const isOwner = document.owner._id.toString() === req.user._id.toString();
-        const isShared = document.sharedWith.some(share => share.user._id.toString() === req.user._id.toString());
+        let isOwner = doc.owner._id.toString() == req.user._id.toString();
+        let isShared = doc.sharedWith.some(s => s.user._id.toString() == req.user._id.toString());
 
         if (!isOwner && !isShared) {
-            return res.status(403).json({ message: 'Not authorized to access this document' });
+            return res.status(403).json({ message: 'not authorized to view this' });
         }
 
-        res.json(document);
+        res.json(doc);
     } catch (error) {
         res.status(500).json({ message: error.message });
     }
 };
 
-// @route   PUT /api/docs/:id/rename
-// @desc    Rename a document
 exports.renameDocument = async (req, res) => {
     try {
         const document = await Document.findById(req.params.id);
         if (!document) return res.status(404).json({ message: 'Document not found' });
 
-        // allow owner or authorized person (simplification: just owner can rename from dashboard)
         if (document.owner.toString() !== req.user._id.toString()) {
             return res.status(403).json({ message: 'Not authorized' });
         }
@@ -71,8 +65,6 @@ exports.renameDocument = async (req, res) => {
     }
 };
 
-// @route   DELETE /api/docs/:id
-// @desc    Delete a document
 exports.deleteDocument = async (req, res) => {
     try {
         const document = await Document.findById(req.params.id);
@@ -89,14 +81,11 @@ exports.deleteDocument = async (req, res) => {
     }
 };
 
-// @route   POST /api/docs/:id/duplicate
-// @desc    Duplicate a document
 exports.duplicateDocument = async (req, res) => {
     try {
         const document = await Document.findById(req.params.id);
         if (!document) return res.status(404).json({ message: 'Document not found' });
 
-        // Make a copy
         const copy = await Document.create({
             title: document.title + ' (Copy)',
             owner: req.user._id,
@@ -109,8 +98,6 @@ exports.duplicateDocument = async (req, res) => {
     }
 };
 
-// @route   POST /api/docs/:id/share
-// @desc    Share document with user
 exports.shareDocument = async (req, res) => {
     try {
         const document = await Document.findById(req.params.id);
@@ -121,7 +108,7 @@ exports.shareDocument = async (req, res) => {
         }
 
         const { email, permission } = req.body;
-        const User = require('../models/User'); // inline require to avoid circular deps
+        const User = require('../models/User');
         const userToShareWith = await User.findOne({ email });
 
         if (!userToShareWith) return res.status(404).json({ message: 'User not found' });

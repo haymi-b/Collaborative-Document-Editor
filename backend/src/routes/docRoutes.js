@@ -11,7 +11,7 @@ router.route('/')
 
 router.route('/:id')
     .get(getDocumentById)
-    .delete(deleteDocument);
+    .delete(deleteDocument); // remove doc
 
 router.put('/:id/rename', renameDocument);
 router.post('/:id/duplicate', duplicateDocument);
